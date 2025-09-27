@@ -12,6 +12,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         const result = captureInstagramReelFrame(request.targetElementId)
         sendResponse(result)
+    } else if (request.action === "showFloatingButton") {
+        console.log("🛒 Showing floating shopping button")
+        showFloatingShoppingButton(request.itemCount)
+    } else if (request.action === "showLoadingButton") {
+        console.log("⏳ Showing loading button")
+        showLoadingButton()
     }
 })
 
@@ -153,6 +159,115 @@ function isElementVisible(element) {
     const rect = element.getBoundingClientRect()
     const visibility = calculateVisibility(rect)
     return visibility > 50 // Consider visible if > 50% visible
+}
+
+// Function to show floating shopping button
+function showFloatingShoppingButton(itemCount) {
+    // Remove existing button if any
+    const existingButton = document.getElementById('primer-floating-button')
+    if (existingButton) {
+        existingButton.remove()
+    }
+    
+    // Create floating button
+    const button = document.createElement('div')
+    button.id = 'primer-floating-button'
+    button.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #8b7355, #a68b5b);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            animation: slideIn 0.3s ease-out;
+            max-width: 200px;
+        ">
+            <div style="font-size: 16px; margin-bottom: 5px;">🛒</div>
+            <div>Found ${itemCount} items!</div>
+            <div style="font-size: 12px; opacity: 0.9; margin-top: 3px;">Click to shop</div>
+        </div>
+        <style>
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        </style>
+    `
+    
+    // Add click handler
+    button.addEventListener('click', () => {
+        // Send message to background to open extension
+        chrome.runtime.sendMessage({ action: 'openExtension' })
+        
+        // Remove button after click
+        button.remove()
+    })
+    
+    // Add to page
+    document.body.appendChild(button)
+    
+    // Auto-remove after 30 seconds
+    setTimeout(() => {
+        if (button.parentNode) {
+            button.remove()
+        }
+    }, 30000)
+}
+
+// Function to show loading button
+function showLoadingButton() {
+    // Remove existing button if any
+    const existingButton = document.getElementById('primer-floating-button')
+    if (existingButton) {
+        existingButton.remove()
+    }
+    
+    // Create loading button
+    const button = document.createElement('div')
+    button.id = 'primer-floating-button'
+    button.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #8b7355, #a68b5b);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            animation: slideIn 0.3s ease-out;
+            max-width: 200px;
+        ">
+            <div style="font-size: 16px; margin-bottom: 5px;">⏳</div>
+            <div>Analyzing reel...</div>
+            <div style="font-size: 12px; opacity: 0.9; margin-top: 3px;">Please wait</div>
+        </div>
+        <style>
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        </style>
+    `
+    
+    // Add to page
+    document.body.appendChild(button)
+    
+    // This button will be replaced by showFloatingShoppingButton when analysis completes
 }
 
 // Test function to verify content script is working
